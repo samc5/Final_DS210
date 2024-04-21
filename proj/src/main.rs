@@ -14,18 +14,21 @@ pub struct Record {
 }
 
 
-fn read_to_map(path: &str) -> HashMap<String, (String, u32)>{
+fn read_to_map(path: &str, cutoff : u32) ->  HashMap<String, Vec<(String, u32)>>{
     let rdr = csv::ReaderBuilder::new()
     .delimiter(b'\t')
     .has_headers(true)
     .flexible(true)
     .from_path(path);
-    let mut graph_list : HashMap<String, (String, u32)> = HashMap::new();
+    let mut graph_list : HashMap<String, Vec<(String, u32)>> = HashMap::new();
     for result in rdr.expect("Something failed").deserialize(){ //skips first line since that's the number of vertices
         let record: Record = result.expect("Something failed");
         println!("{:?} This is a location", record.user_loc);
-        graph_list.insert(record.user_loc, (record.fr_loc, record.scaled_sci));
-        //graph_list[&record.user_loc].push((record.fr_loc, record.scaled_sci));
+        //graph_list.insert(record.user_loc, (record.fr_loc, record.scaled_sci));
+        if record.scaled_sci > cutoff{
+            graph_list.entry(record.user_loc).or_insert(Vec::new()).push((record.fr_loc, record.scaled_sci));
+        }
+            //graph_list[&record.user_loc].push((record.fr_loc, record.scaled_sci));
     }
     return graph_list
 }
@@ -64,7 +67,8 @@ fn read_to_map(path: &str) -> HashMap<String, (String, u32)>{
 fn main() {
     let start = Instant::now();
     println!("Hello, world!");
-    //let adjacency_map : HashMap<String, (String, u32)> = read_to_map("data/data.tsv");
+    let adjacency_map : HashMap<String, Vec<(String, u32)>> = read_to_map("test_new.tsv", 10000000 as u32);
+    println!("{:?}", adjacency_map);
     let duration = start.elapsed();
     println!("Time elapsed is: {:?}", duration);
 }
