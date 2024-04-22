@@ -12,18 +12,18 @@ pub struct Record {
     // for reading in edges with serde
     user_loc:String,
     fr_loc:String,
-    scaled_sci:u32
+    scaled_sci:usize
 }
 
 #[derive(Debug,Clone)]
 struct Outedge {
     vertex: String,
-    length: u32,
+    length: usize,
 }
 
 
 
-fn read_to_map(path: &str, cutoff : u32) ->  HashMap<String, Vec<Outedge>>{
+fn read_to_map(path: &str, cutoff : usize) ->  HashMap<String, Vec<Outedge>>{
     let rdr = csv::ReaderBuilder::new()
     .delimiter(b'\t')
     .has_headers(true)
@@ -42,12 +42,38 @@ fn read_to_map(path: &str, cutoff : u32) ->  HashMap<String, Vec<Outedge>>{
     return graph_list
 }
 
-fn shortest_paths(map: HashMap<String, Vec<Outedge>>){
+fn shortest_paths(map: &HashMap<String, Vec<Outedge>>){
     let start: String = String::from("USA31085");
-    let mut distances: HashMap<String, Option<u32>> = HashMap::new();
-    distances.entry(start.clone()).or_insert(Some(0));
-    let mut pq = BinaryHeap::<(u32,&String)>::new();
+    let mut distances: HashMap<&String, Option<usize>> = HashMap::new();
+    distances.entry(&start).or_insert(Some(0));
+    let mut pq = BinaryHeap::<(usize,&String)>::new();
     pq.push((0,&start));
+    // the real stf
+    while let Some((dist,v)) = pq.pop() {
+        match map.get(v) {
+            None => {break},
+            Some(edges) => {
+                for Outedge{vertex,length} in edges.iter() {
+                    println!("{:?}", vertex);
+                    let new_dist = dist + *length;
+                    let update = match distances.get(vertex) {
+                        None => {true}
+                        Some(d) => {
+                            match d{
+                                None => {true},
+                                Some(real_d) => {new_dist > *real_d}
+                            }
+                        }
+                    };
+                    if update {
+                        distances.entry(vertex).or_insert(Some(new_dist)); //may be missing something
+                        pq.push((new_dist,vertex));
+                    }
+                }
+            }
+        };
+
+    };
 
 }
 
@@ -85,7 +111,8 @@ fn write_test(){
 fn main() {
     let start = Instant::now();
     println!("Hello, world!");
-    let adjacency_map : HashMap<String, Vec<Outedge>> = read_to_map("test_new.tsv", 80000 as u32);
+    let adjacency_map : HashMap<String, Vec<Outedge>> = read_to_map("test_new.tsv", 10000 as usize);
+    shortest_paths(&adjacency_map);
     println!("{:?}", adjacency_map);
     let duration = start.elapsed();
     println!("Time elapsed is: {:?}", duration);
