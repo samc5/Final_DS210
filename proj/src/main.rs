@@ -91,6 +91,7 @@ fn read_to_map_aggregate(path: &str, cutoff : usize) ->  HashMap<String, Vec<Out
     let county_map = counties_map();
     for result in rdr.expect("Something failed").deserialize(){ 
         let record: Record = result.expect("Something failed");
+        println!("{:?}", record.user_loc);
         let level = match county_map.get(&record.user_loc){ // please god let me refactor this
             None => "None",
             Some(val) => {val}
@@ -112,11 +113,11 @@ fn read_to_map_aggregate(path: &str, cutoff : usize) ->  HashMap<String, Vec<Out
         match counts_map.get(&(String::from(level_slice), String::from(level2_slice))) {
             None => {
                 counts_map.entry((String::from(level2_slice), String::from(level_slice))).or_insert(CountryPair{count: 0, distance: 0}).count += 1;
-                counts_map.entry((String::from(level2_slice), String::from(level_slice))).or_insert(CountryPair{count: 0, distance: 0}).distance += 1;
+                counts_map.entry((String::from(level2_slice), String::from(level_slice))).or_insert(CountryPair{count: 0, distance: 0}).distance += record.scaled_sci;
             }
             Some(_val) => {
                 counts_map.entry((String::from(level_slice), String::from(level2_slice))).or_insert(CountryPair{count: 0, distance: 0}).count += 1;
-                counts_map.entry((String::from(level_slice), String::from(level2_slice))).or_insert(CountryPair{count: 0, distance: 0}).distance += 1;
+                counts_map.entry((String::from(level_slice), String::from(level2_slice))).or_insert(CountryPair{count: 0, distance: 0}).distance += record.scaled_sci;
 
             }
 
@@ -215,6 +216,8 @@ fn main() {
     let start = Instant::now();
    // println!("Hello, world!");
     let adjacency_map : HashMap<String, Vec<Outedge>> = read_to_map_aggregate("test_new.tsv", 10000 as usize);
+    // let adjacency_map : HashMap<String, Vec<Outedge>> = read_to_map_aggregate("data/data.tsv", 10000 as usize);
+
     //let adjacency_map : HashMap<String, Vec<Outedge>> = read_to_map("data/data.tsv", 100000 as usize);
     for i in adjacency_map.keys(){
        // println!("{:?}", i);
