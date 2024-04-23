@@ -21,6 +21,12 @@ struct Outedge {
     length: usize,
 }
 
+#[derive(Debug,Clone)]
+struct CountryPair {
+    count: usize,
+    distance: usize,
+}
+
 #[derive(Debug, Deserialize)]
 struct CountyRecord{
     key: String,
@@ -30,7 +36,7 @@ struct CountyRecord{
 
 
 fn counties_map() -> HashMap<String, String>{
-    let path: &str = "data/counties.csv";
+    let path: &str = "data/counties2.csv";
     let rdr = csv::ReaderBuilder::new()
     .delimiter(b',')
     .has_headers(true)
@@ -71,36 +77,51 @@ fn read_to_map(path: &str, cutoff : usize) ->  HashMap<String, Vec<Outedge>>{
 }
 
 
+
+
+
 fn read_to_map_aggregate(path: &str, cutoff : usize) ->  HashMap<String, Vec<Outedge>>{
     let rdr = csv::ReaderBuilder::new()
     .delimiter(b'\t')
     .has_headers(true)
     .flexible(true)
     .from_path(path);
+    let mut counts_map : HashMap<(String, String), CountryPair> = HashMap::new();
     let mut graph_list : HashMap<String, Vec<Outedge>> = HashMap::new();
-    let mut counts_map : HashMap<String, usize> = HashMap::new();
     let county_map = counties_map();
     for result in rdr.expect("Something failed").deserialize(){ 
         let record: Record = result.expect("Something failed");
-        let level = match county_map.get(&record.user_loc){
+        let level = match county_map.get(&record.user_loc){ // please god let me refactor this
             None => "None",
             Some(val) => {val}
         };
-        match level {
-            "gadm1" => {
-                let slice : &str = &record.user_loc[0..3];
-                *counts_map.entry(String::from(slice)).or_insert(0) += 1;
-                println!("{:?}", slice);
-            },
-            "nuts3" => {
-                let slice : &str = &record.user_loc[0..2];
-                *counts_map.entry(String::from(slice)).or_insert(0) += 1;
-                println!("{:?}", slice);
+        let level2 = match county_map.get(&record.fr_loc){
+            None => "None",
+            Some(val) => {val}
+        };
+        let level_slice : &str = match level {
+            "gadm1" => &record.user_loc[0..3],
+            "nuts3" => &record.user_loc[0..2],
+            &_ => &record.user_loc
+        };
+        let level2_slice : &str = match level2 {
+            "gadm1" => &record.fr_loc[0..3],
+            "nuts3" => &record.fr_loc[0..2],
+            &_ => &record.fr_loc
+        };
+        match counts_map.get(&(String::from(level_slice), String::from(level2_slice))) {
+            None => {
+                counts_map.entry((String::from(level2_slice), String::from(level_slice))).or_insert(CountryPair{count: 0, distance: 0}).count += 1;
+                counts_map.entry((String::from(level2_slice), String::from(level_slice))).or_insert(CountryPair{count: 0, distance: 0}).distance += 1;
             }
-            &_ => {
-                println!("{}", level);
+            Some(_val) => {
+                counts_map.entry((String::from(level_slice), String::from(level2_slice))).or_insert(CountryPair{count: 0, distance: 0}).count += 1;
+                counts_map.entry((String::from(level_slice), String::from(level2_slice))).or_insert(CountryPair{count: 0, distance: 0}).distance += 1;
+
             }
+
         }
+        
 
         //println!("{:?}", level);
         //println!("{:?} This is a location", record.user_loc);
@@ -109,7 +130,7 @@ fn read_to_map_aggregate(path: &str, cutoff : usize) ->  HashMap<String, Vec<Out
         }
             //graph_list[&record.user_loc].push((record.fr_loc, record.scaled_sci));
     }
-    println!("{:?}", county_map);
+   println!("{:?}", counts_map);
     return graph_list
 }
 
