@@ -21,6 +21,29 @@ struct Outedge {
     length: usize,
 }
 
+#[derive(Debug, Deserialize)]
+struct CountyRecord{
+    key: String,
+    level: String
+}
+
+
+
+fn counties_map() -> HashMap<String, String>{
+    let path: &str = "data/counties.csv";
+    let rdr = csv::ReaderBuilder::new()
+    .delimiter(b',')
+    .has_headers(true)
+    .flexible(true)
+    .from_path(path);
+    let mut county_map : HashMap<String, String> = HashMap::new();
+    for result in rdr.expect("something failed").deserialize(){
+        let record : CountyRecord = result.expect("Something failed");
+        county_map.insert(record.key, record.level);
+    }
+    return county_map;
+}
+
 
 
 fn read_to_map(path: &str, cutoff : usize) ->  HashMap<String, Vec<Outedge>>{
@@ -30,11 +53,15 @@ fn read_to_map(path: &str, cutoff : usize) ->  HashMap<String, Vec<Outedge>>{
     .flexible(true)
     .from_path(path);
     let mut graph_list : HashMap<String, Vec<Outedge>> = HashMap::new();
-    for result in rdr.expect("Something failed").deserialize(){ //skips first line since that's the number of vertices
+    let county_map = counties_map();
+    for result in rdr.expect("Something failed").deserialize(){ 
         let record: Record = result.expect("Something failed");
-        
+        let level = match county_map.get(&record.user_loc){
+            None => "None",
+            Some(val) => {val}
+        };
+      //  println!("{:?}", level);
         //println!("{:?} This is a location", record.user_loc);
-        //graph_list.insert(record.user_loc, (record.fr_loc, record.scaled_sci));
         if record.scaled_sci > cutoff{
             graph_list.entry(record.user_loc).or_insert(Vec::new()).push(Outedge{vertex: record.fr_loc, length: record.scaled_sci});
         }
@@ -43,6 +70,48 @@ fn read_to_map(path: &str, cutoff : usize) ->  HashMap<String, Vec<Outedge>>{
     return graph_list
 }
 
+
+fn read_to_map_aggregate(path: &str, cutoff : usize) ->  HashMap<String, Vec<Outedge>>{
+    let rdr = csv::ReaderBuilder::new()
+    .delimiter(b'\t')
+    .has_headers(true)
+    .flexible(true)
+    .from_path(path);
+    let mut graph_list : HashMap<String, Vec<Outedge>> = HashMap::new();
+    let mut counts_map : HashMap<String, usize> = HashMap::new();
+    let county_map = counties_map();
+    for result in rdr.expect("Something failed").deserialize(){ 
+        let record: Record = result.expect("Something failed");
+        let level = match county_map.get(&record.user_loc){
+            None => "None",
+            Some(val) => {val}
+        };
+        match level {
+            "gadm1" => {
+                let slice : &str = &record.user_loc[0..3];
+                *counts_map.entry(String::from(slice)).or_insert(0) += 1;
+                println!("{:?}", slice);
+            },
+            "nuts3" => {
+                let slice : &str = &record.user_loc[0..2];
+                *counts_map.entry(String::from(slice)).or_insert(0) += 1;
+                println!("{:?}", slice);
+            }
+            &_ => {
+                println!("{}", level);
+            }
+        }
+
+        //println!("{:?}", level);
+        //println!("{:?} This is a location", record.user_loc);
+        if record.scaled_sci > cutoff{
+            graph_list.entry(record.user_loc).or_insert(Vec::new()).push(Outedge{vertex: record.fr_loc, length: record.scaled_sci});
+        }
+            //graph_list[&record.user_loc].push((record.fr_loc, record.scaled_sci));
+    }
+    println!("{:?}", county_map);
+    return graph_list
+}
 
 
 
@@ -57,11 +126,11 @@ fn shortest_paths(map: &HashMap<String, Vec<Outedge>>, start : String){
     pq.push((0,&start));
     // the real stf
     while let Some((dist,v)) = pq.pop() {
-        let rng = rand::thread_rng().gen_range(0..50000);
-        // problem is when a node connects to itself
-        if rng == 0{
-            println!("The while loop is at the top, the some is {:?}, {:?}", dist, v);
-        }
+        // let rng = rand::thread_rng().gen_range(0..50000);
+        // // problem is when a node connects to itself
+        // if rng == 0{
+        //     println!("The while loop is at the top, the some is {:?}, {:?}", dist, v);
+        // }
         match map.get(v) {
             None => {break},
             Some(edges) => {
@@ -86,7 +155,7 @@ fn shortest_paths(map: &HashMap<String, Vec<Outedge>>, start : String){
         };
 
     };
-    println!("{:?}", distances);
+   // println!("{:?}", distances);
 
 }
 
@@ -123,14 +192,15 @@ fn write_test(){
 
 fn main() {
     let start = Instant::now();
-    println!("Hello, world!");
-    let adjacency_map : HashMap<String, Vec<Outedge>> = read_to_map("test_new.tsv", 10000 as usize);
+   // println!("Hello, world!");
+    let adjacency_map : HashMap<String, Vec<Outedge>> = read_to_map_aggregate("test_new.tsv", 10000 as usize);
     //let adjacency_map : HashMap<String, Vec<Outedge>> = read_to_map("data/data.tsv", 100000 as usize);
     for i in adjacency_map.keys(){
        // println!("{:?}", i);
         shortest_paths(&adjacency_map, String::from(i));
     }
-        //println!("{:?}", adjacency_map);
+    let counties_map = counties_map();
+    //println!("{:?}", counties_map);
     let duration = start.elapsed();
     println!("Time elapsed is: {:?}", duration);
 }
