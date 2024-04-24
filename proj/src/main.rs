@@ -91,6 +91,7 @@ fn read_to_map_aggregate(path: &str, cutoff : usize) ->  HashMap<String, Vec<Out
     let county_map = counties_map();
     for result in rdr.expect("Something failed").deserialize(){ 
         let record: Record = result.expect("Something failed");
+        if record.scaled_sci > cutoff{
        // println!("{:?}", record.user_loc);
         let level = match county_map.get(&record.user_loc){ // please god let me refactor this
             None => "None",
@@ -123,7 +124,7 @@ fn read_to_map_aggregate(path: &str, cutoff : usize) ->  HashMap<String, Vec<Out
 
         }
         
-
+    }
         //println!("{:?}", level);
         //println!("{:?} This is a location", record.user_loc);
 
@@ -142,7 +143,7 @@ fn read_to_map_aggregate(path: &str, cutoff : usize) ->  HashMap<String, Vec<Out
         let vertex2 = &key.1;
         graph_list.entry(String::from(vertex1)).or_insert(Vec::new()).push(Outedge{vertex: String::from(vertex2), length: true_distance});
     }   
-    println!("{:?}", counts_map);
+   // println!("{:?}", graph_list);
     return graph_list
 }
 
@@ -159,16 +160,20 @@ fn shortest_paths(map: &HashMap<String, Vec<Outedge>>, start : String){
     pq.push((0,&start));
     // the real stf
     while let Some((dist,v)) = pq.pop() {
-        // let rng = rand::thread_rng().gen_range(0..50000);
-        // // problem is when a node connects to itself
-        // if rng == 0{
-        //     println!("The while loop is at the top, the some is {:?}, {:?}", dist, v);
-        // }
+        let rng = rand::thread_rng().gen_range(0..50000);
+        // problem is when a node connects to itself
+        if rng == 0{
+            println!("!---!");
+            println!("The while loop is at the top, the some is {:?}, {:?}", dist, v);
+            println!("{:?}", pq);
+        }
         match map.get(v) {
             None => {break},
             Some(edges) => {
                 for Outedge{vertex,length} in edges.iter() {
-                    //println!("{:?}", vertex);
+                    if rng == 0{
+                        println!("{:?}, {:?}", vertex, v);
+                    }
                     let new_dist = dist + *length;
                     let update = match distances.get(vertex) {
                         None => {true}
@@ -186,6 +191,12 @@ fn shortest_paths(map: &HashMap<String, Vec<Outedge>>, start : String){
                 }
             }
         };
+        if rng == 0{
+          //  println!("!---!");
+          //  println!("The while loop is at the top, the some is {:?}, {:?}", dist, v);
+            println!("{:?}", pq);
+            println!("{:?}", distances);
+        }
 
     };
    // println!("{:?}", distances);
@@ -230,10 +241,10 @@ fn main() {
     // let adjacency_map : HashMap<String, Vec<Outedge>> = read_to_map_aggregate("data/data.tsv", 10000 as usize);
 
     //let adjacency_map : HashMap<String, Vec<Outedge>> = read_to_map("data/data.tsv", 100000 as usize);
-    // for i in adjacency_map.keys(){
-    //    // println!("{:?}", i);
-    //     shortest_paths(&adjacency_map, String::from(i));
-    // }
+    for i in adjacency_map.keys(){
+       // println!("{:?}", i);
+        shortest_paths(&adjacency_map, String::from(i));
+    }
     let counties_map = counties_map();
     //println!("{:?}", counties_map);
     let duration = start.elapsed();
