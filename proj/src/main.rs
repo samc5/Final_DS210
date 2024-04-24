@@ -91,7 +91,7 @@ fn read_to_map_aggregate(path: &str, cutoff : usize) ->  HashMap<String, Vec<Out
     let county_map = counties_map();
     for result in rdr.expect("Something failed").deserialize(){ 
         let record: Record = result.expect("Something failed");
-        println!("{:?}", record.user_loc);
+       // println!("{:?}", record.user_loc);
         let level = match county_map.get(&record.user_loc){ // please god let me refactor this
             None => "None",
             Some(val) => {val}
@@ -126,12 +126,23 @@ fn read_to_map_aggregate(path: &str, cutoff : usize) ->  HashMap<String, Vec<Out
 
         //println!("{:?}", level);
         //println!("{:?} This is a location", record.user_loc);
-        if record.scaled_sci > cutoff{
-            graph_list.entry(record.user_loc).or_insert(Vec::new()).push(Outedge{vertex: record.fr_loc, length: record.scaled_sci});
-        }
+
+        // if record.scaled_sci > cutoff{
+        //     graph_list.entry(record.user_loc).or_insert(Vec::new()).push(Outedge{vertex: record.fr_loc, length: record.scaled_sci});
+        // }
             //graph_list[&record.user_loc].push((record.fr_loc, record.scaled_sci));
     }
-   println!("{:?}", counts_map);
+    let mut counter : usize = 0;
+    for (key, val) in counts_map.iter(){
+        counter += 1;
+        println!("{:?}, {:?}", key, counter);
+        let pair : &CountryPair = val;
+        let true_distance : usize = (*pair).distance / (*pair).count; // I know this is integer division but it shouldn't lose much precision and I feel like converting to floats and back would add a fair amount of operations
+        let vertex1 = &key.0;
+        let vertex2 = &key.1;
+        graph_list.entry(String::from(vertex1)).or_insert(Vec::new()).push(Outedge{vertex: String::from(vertex2), length: true_distance});
+    }   
+    println!("{:?}", counts_map);
     return graph_list
 }
 
@@ -219,10 +230,10 @@ fn main() {
     // let adjacency_map : HashMap<String, Vec<Outedge>> = read_to_map_aggregate("data/data.tsv", 10000 as usize);
 
     //let adjacency_map : HashMap<String, Vec<Outedge>> = read_to_map("data/data.tsv", 100000 as usize);
-    for i in adjacency_map.keys(){
-       // println!("{:?}", i);
-        shortest_paths(&adjacency_map, String::from(i));
-    }
+    // for i in adjacency_map.keys(){
+    //    // println!("{:?}", i);
+    //     shortest_paths(&adjacency_map, String::from(i));
+    // }
     let counties_map = counties_map();
     //println!("{:?}", counties_map);
     let duration = start.elapsed();
