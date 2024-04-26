@@ -52,11 +52,14 @@ impl Graph {
         let rank: HashMap<Vertex, usize> = HashMap::new();
         let mut g = Graph{outedges,parent,rank};
         g.outedges.sort_by(|a, b| b.2.cmp(&a.2)); // does this sort by minimum?
-        // for node in outedges {
-        //     g.parent.push(node);
-        //     g.rank.push(0);
-        // }
-        g
+        for node in &g.outedges {
+            println!("{:?} hey", node.0);
+            let new_node0 = &node.0;
+            let new_node1 = &node.1;
+            g.parent.insert(String::from(new_node1), String::from(new_node0));
+            g.rank.insert(String::from(new_node0), 0);
+        }
+        return g
     }
     
     // fn find(&mut self, i:Vertex) -> Vertex {
