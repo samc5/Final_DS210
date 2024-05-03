@@ -2,7 +2,7 @@
 
 ## My Dataset
 
-https://data.humdata.org/dataset/social-connectedness-index
+https://data.humdata.org/dataset/social-connectedness-index  
 I am using the gadm1_nuts3_counties-gadm1_nuts3_counties - FB… dataset on here.
 
 
@@ -14,23 +14,23 @@ My project is implementing the minimum spanning tree algorithm on this dataset, 
 
 ## Launch Instructions
 
-1. git clone the repository. Because of the 122 mb data file, this doesn’t fully work. Once it freezes on 90% on “Filtering Content,” ctrl-c to stop it. Everything except for the data file should be in place
-2. Download the 122 MB cleaned.tsv file directly from the github website, under proj/data/cleaned.tsv. 
+1. `git clone` the repository. Because of the 122 mb data file, this doesn’t fully work. Once it freezes on 90% on “Filtering Content,” `ctrl-c` to stop it. Everything except for the data file should be in place
+2. Download the 122 MB `cleaned.tsv` file directly from the github website, under `proj/data/cleaned.tsv`. 
 3. Move the downloaded file into the same place in the cloned repository
-4. Cd into repo_name/proj
-5. cargo test to verify test cases
-6. cargo run --release to run the main code 
+4. `cd` into `repo_name/proj`
+5. `cargo test` to verify test cases
+6. `cargo run --release` to run the main code 
 
 
 ## Methodology
-The dataset comes in at over a gigabyte, so my first step was to reduce it in size. I decided to do this by folding all subregions of countries other than the US into a singular country-wide vertex. The code in data_cleaning.rs does this, and if you wish to do this yourself starting with the original 1.1 GB dataset (which should be renamed data.tsv and placed within proj/data/, you can call data_cleaning::run_cleaner() at the start of the main function. Because the dataset is so big, this takes ~15 minutes, so I have elected to upload the already reduced (127 MB) dataset using Git LFS. Thus my code as it stands does not directly run the data_cleaning functions. These create cleaned.tsv, which has approximately 3400 vertices, down from 8000+.
+The dataset comes in at over a gigabyte, so my first step was to reduce it in size. I decided to do this by folding all subregions of countries other than the US into a singular country-wide vertex. The code in `data_cleaning.rs` does this, and if you wish to do this yourself starting with the original 1.1 GB dataset (which should be renamed `data.tsv` and placed within `proj/data/`), you can call data_cleaning::run_cleaner() at the start of the main function. Because the dataset is so big, this takes ~15 minutes, so I have elected to upload the already reduced (127 MB) dataset using Git LFS. Thus my code as it stands does not directly run the data_cleaning functions. These create cleaned.tsv, which has approximately 3400 vertices, down from 8000+.
 
- Because minimum spanning trees operate on edge lists, I created a Graph struct which stores this edge list and other things necessary for MST. Graphs can be initialized with Graph::create_undirected(path)., where the path is the reduced data (cleaned.tsv).  
+ Because minimum spanning trees operate on edge lists, I created a Graph struct which stores this edge list and other things necessary for MST. Graphs can be initialized with `Graph::create_undirected(path)`, where the path is the reduced data (`cleaned.tsv`).  
 
-This method utilizes two highly important helper functions - read_to_counts and counts_to_vector, which read in the data and convert it to a list of edges. As part of this process, it generates the vec_to_num_map variable of the Graph struct, which allows me to convert from the country and county codes (Strings) to a set of integers that I can use to store the edges as vectors. Create_undirected also sorts by connectedness to put the most connected countries and counties first in the vector. This is the opposite of standard MST, since instead of minimizing distance my aim is to maximize connectedness.
-The kruskal_mst method (the center of the project) invokes find and union to calculate the minimum spanning tree of a previously initialized graph. This returns a vector of edges, which I write (in my main) to the file output_MST.tsv. 
+This method utilizes two highly important helper functions - `read_to_counts` and `counts_to_vector`, which read in the data and convert it to a list of edges. As part of this process, it generates the `vertex_to_num_map` variable of the Graph struct, which allows me to convert from the country and county codes (Strings) to a set of integers that I can use to store the edges as vectors. `Create_undirected` also sorts by connectedness to put the most connected countries and counties first in the vector. This is the opposite of standard MST, since instead of minimizing distance my aim is to maximize connectedness.
+The `kruskal_mst` method (the center of the project) invokes `find` and `union` to calculate the minimum spanning tree of a previously initialized graph. This returns a vector of edges, which I write (in my main) to the file `output_MST.tsv`. 
 
-SInce a graph must have only one connected component for MST to be applicable, I also have a module for calculating the number of connected components This is called as verify_connected_components whenever the MST is run, and panics if there is more than one component in the given graph.
+SInce a graph must have only one connected component for MST to be applicable, I also have a module for calculating the number of connected components This is called as `verify_connected_components` whenever the MST is run, and panics if there is more than one component in the given graph.
 
 
 
@@ -68,7 +68,7 @@ Without doing a full or quantitative analysis of the results of the MST, most co
 
 US counties tend to be far more connected with each other than full countries are with even their neighbors. This makes sense just in terms of how many geographic regions make up a country, and also given the way I compressed the data (I did not weight regions in a country by population, so the connectedness of urban areas is likely strongly underestimated).
 
-### Graph Image (generated with Python with help from ChatGPT
+### Graph Image (generated with Python with help from ChatGPT)
 
-https://colab.research.google.com/drive/1O_LT_PncWdMy8pmY8jVSEoJeJ2yVZexb?usp=sharing)
+https://colab.research.google.com/drive/1O_LT_PncWdMy8pmY8jVSEoJeJ2yVZexb?usp=sharing  
 If you want to generate it yourself and download it as a 16MB image so that you can see all the labels, run the code in here. Otherwise, the low-resolution image is available in the pdf version of this writeup
