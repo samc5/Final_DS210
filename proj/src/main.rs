@@ -197,6 +197,16 @@ fn test_components(){
 }
 
 #[test]
+fn test_two_components(){
+    let mut g : Graph = Graph::create_undirected("tests/test_two_components.tsv");
+    let adjacency_list : Vec<Vec<usize>> = g.adjacency_list();
+    println!("{:?}", adjacency_list);
+    let components_count : usize = verify_connected_components(g.n, adjacency_list);
+    assert_eq!(components_count, 2)
+}
+
+
+#[test]
 fn test_clique(){
     let test_result : (usize, usize) = run_test("tests/test_clique.tsv");
     assert_eq!(test_result, (1, 9));
@@ -213,7 +223,13 @@ fn test_niner(){
     let test_result : (usize, usize) = run_test("tests/test_niner.tsv");
     assert_eq!(test_result, (1, 51));}
 
-
+#[test]
+fn test_straight(){
+    let test_result : (usize, usize) = run_test("tests/test_straight.tsv");
+    assert_eq!(test_result, (1, 49));}
+    
+    
+    
 
 
 
