@@ -3,7 +3,7 @@
 ## My Dataset
 
 https://data.humdata.org/dataset/social-connectedness-index  
-I am using the gadm1_nuts3_counties-gadm1_nuts3_counties - FB… dataset on here.
+I am using the `gadm1_nuts3_counties-gadm1_nuts3_counties - FB…` dataset on here.
 
 
 This dataset is a weighted, undirected graph measuring the social connectedness (on facebook)  between subregions of different countries. It is a clique graph, where every node connects to every other node, and the weights of the edges are the level of connectedness between its two vertices. Initially, it has over 8000 vertices.
