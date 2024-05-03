@@ -9,7 +9,8 @@ mod data_reading;
 use crate::data_reading::data_reading::{Record, CountryPair};
 mod cc;
 use crate::cc::cc::verify_connected_components;
-
+mod write_tests;
+use crate::write_tests::write_tests::write_all_tests;
 type Vertex = String;
 type Distance = usize;
 type Edge = (Vertex, Vertex, Distance);
@@ -27,28 +28,6 @@ struct Graph {
 impl Graph {
     fn adjacency_list(&self) -> Vec<Vec<usize>>{
         /// Returns an adjacency list representationn of the graph, of vectors with indices determined by vec_to_num_map
-        let mut graph_list : Vec<Vec<usize>> = vec![vec![];self.n];
-        for (v,w,_) in self.edges.iter() {
-            match self.vec_to_num_map.get(v){
-                Some(vv) =>{
-                    match self.vec_to_num_map.get(w){
-                        Some (ww) => {
-                            graph_list[*vv].push(*ww);
-                            graph_list[*ww].push(*vv);
-                        },
-                        None => {
-                        }
-                    }
-                },
-                None => {
-                }
-            }
-
-        };
-        return graph_list;
-    }
-    fn new_adjacency_list(&self) -> Vec<Vec<usize>>{
-        println!("{:?}", self.vec_to_num_map);
         let mut graph_list : Vec<Vec<usize>> = vec![vec![];self.n];
         for (v,w,_) in self.edges.iter() {
             match self.vec_to_num_map.get(v){
@@ -196,83 +175,6 @@ fn read_to_vec_aggregate(path: &str) ->  (Vec<Edge>, HashMap<String, usize>, usi
 }
 
 
-fn write_line(file: &mut File, s: String){
-    file.write_all(s.as_bytes()).expect("Unable to write file"); 
-    
-}
-
-
-fn write_test_clique(){
-    let write_path: &str = "tests/test_clique.tsv";
-    let _file = File::create(&write_path).expect("Unable to create file");
-    let mut file = OpenOptions::new()
-    .append(true)
-    .open(&write_path)
-    .expect("cannot open file");
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n", String::from("user_loc"), String::from("fr_loc"),String::from("scaled_sci")));
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n","1", "2",3));
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n","2", "4",3));
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n","4", "3",3));
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n","3", "1",3));
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n","2", "3",1));    
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n","4", "1",1));
-}
-
-fn write_test_oneside(){
-    let write_path: &str = "tests/test_oneside.tsv";
-    let _file = File::create(&write_path).expect("Unable to create file");
-    let mut file = OpenOptions::new()
-    .append(true)
-    .open(&write_path)
-    .expect("cannot open file");
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n", String::from("user_loc"), String::from("fr_loc"),String::from("scaled_sci")));
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n","1", "2",2));
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n","2", "3",1));
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n","3", "4",2));
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n","4", "5",2));
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n","5", "1",2));    
-}
-
-fn write_test_niner(){
-    let write_path: &str = "tests/test_niner.tsv";
-    let _file = File::create(&write_path).expect("Unable to create file");
-    let mut file = OpenOptions::new()
-    .append(true)
-    .open(&write_path)
-    .expect("cannot open file");
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n", String::from("user_loc"), String::from("fr_loc"),String::from("scaled_sci")));
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n","1", "2",2));
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n","1", "4",1));
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n","1", "5",10));
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n","2", "3",5));
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n","2", "5",1));
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n","3", "5",10));
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n","3", "6",5));
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n","4", "5",5));
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n","4", "7",1));
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n","5", "6",2));
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n","5", "7",10));
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n","5", "9",1));
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n","6", "9",5));
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n","7", "8",1));
-}
-
-
-fn write_test_components(){
-    let write_path: &str = "tests/test_components.tsv";
-    let _file = File::create(&write_path).expect("Unable to create file");
-    let mut file = OpenOptions::new()
-    .append(true)
-    .open(&write_path)
-    .expect("cannot open file");
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n", String::from("user_loc"), String::from("fr_loc"),String::from("scaled_sci")));
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n","1", "2",1));
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n","1", "3",1));
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n","4", "5",1));
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n","5", "6",1));
-    write_line(&mut file, format!("{0}\t{1}\t{2}\n","7", "8",1));
-}
-
 fn run_test(test_path: &str) -> (usize, usize){
     let mut g : Graph = Graph::create_undirected(test_path);
     let adjacency_list : Vec<Vec<usize>> = g.adjacency_list();
@@ -313,12 +215,6 @@ fn test_niner(){
 
 
 
-fn write_all_tests() {
-    write_test_clique();
-    write_test_oneside();
-    write_test_niner();
-    write_test_components();
-}
 
 
 
