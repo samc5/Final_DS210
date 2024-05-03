@@ -205,6 +205,23 @@ fn test_two_components(){
     assert_eq!(components_count, 2)
 }
 
+#[test]
+fn test_one_component(){
+    let mut g : Graph = Graph::create_undirected("tests/test_one_component.tsv");
+    let adjacency_list : Vec<Vec<usize>> = g.adjacency_list();
+    println!("{:?}", adjacency_list);
+    let components_count : usize = verify_connected_components(g.n, adjacency_list);
+    assert_eq!(components_count, 1)
+}
+#[test]
+fn test_many_components(){
+    let mut g : Graph = Graph::create_undirected("tests/test_many_components.tsv");
+    let adjacency_list : Vec<Vec<usize>> = g.adjacency_list();
+    println!("{:?}", adjacency_list);
+    let components_count : usize = verify_connected_components(g.n, adjacency_list);
+    assert_eq!(components_count, 9)
+}
+
 
 #[test]
 fn test_clique(){
@@ -228,7 +245,11 @@ fn test_straight(){
     let test_result : (usize, usize) = run_test("tests/test_straight.tsv");
     assert_eq!(test_result, (1, 49));}
     
-    
+#[test]
+fn test_hanger(){
+    let test_result : (usize, usize) = run_test("tests/test_hanger.tsv");
+    assert_eq!(test_result, (1, 25));}
+      
     
 
 

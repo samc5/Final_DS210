@@ -80,7 +80,26 @@ pub mod write_tests{
         write_line(&mut file, format!("{0}\t{1}\t{2}\n","7", "8",10));
     }
 
-
+    fn write_test_hanger(){
+        let write_path: &str = "tests/test_hanger.tsv";
+        let _file = File::create(&write_path).expect("Unable to create file");
+        let mut file = OpenOptions::new()
+        .append(true)
+        .open(&write_path)
+        .expect("cannot open file");
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n", String::from("user_loc"), String::from("fr_loc"),String::from("scaled_sci")));
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n","1", "2",2));
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n","1", "6",2));
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n","1", "7",1));
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n","2", "3",3));
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n","2", "5",5));
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n","2", "6",1));
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n","3", "4",4));
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n","4", "5",5));
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n","5", "6",4));
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n","5", "7",5));
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n","6", "7",3));
+    }
     
     fn write_test_components(){
         let write_path: &str = "tests/test_components.tsv";
@@ -116,14 +135,55 @@ pub mod write_tests{
 
     }
 
+    fn write_test_one_component(){
+        let write_path: &str = "tests/test_one_component.tsv";
+        let _file = File::create(&write_path).expect("Unable to create file");
+        let mut file = OpenOptions::new()
+        .append(true)
+        .open(&write_path)
+        .expect("cannot open file");
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n", String::from("user_loc"), String::from("fr_loc"),String::from("scaled_sci")));
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n","1", "2",1));
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n","2", "3",1));
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n","3", "4",1));
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n","4", "5",1));
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n","5", "6",1));
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n","6", "7",1));
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n","7", "8",1));
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n","6", "9",1));
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n","9", "10",1));
+    }
+    
+    fn write_test_many_components(){
+        let write_path: &str = "tests/test_many_components.tsv";
+        let _file = File::create(&write_path).expect("Unable to create file");
+        let mut file = OpenOptions::new()
+        .append(true)
+        .open(&write_path)
+        .expect("cannot open file");
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n", String::from("user_loc"), String::from("fr_loc"),String::from("scaled_sci")));
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n","1", "2",1));
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n","3", "4",1));
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n","5", "6",1));
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n","7", "8",1));
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n","9", "10",1));
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n","11", "12",1));
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n","13", "14",1));
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n","15", "16",1));
+        write_line(&mut file, format!("{0}\t{1}\t{2}\n","17", "18",1));
+    }
+
 
     pub fn write_all_tests() {
         write_test_clique();
         write_test_oneside();
         write_test_niner();
         write_test_straight();
+        write_test_hanger();
         write_test_components();
         write_test_two_components();
+        write_test_one_component();
+        write_test_many_components();
     }
     
 
