@@ -3,9 +3,7 @@ pub mod data_cleaning{
     use std::io::prelude::*;
     use serde::Deserialize;
     use std::collections::HashMap;
-    use rand::Rng;
     use std::fs::OpenOptions;
-    // mod data_reading;
     use crate::data_reading::data_reading::{Record, CountryPair};
 
     #[derive(Deserialize)]
@@ -14,36 +12,6 @@ pub mod data_cleaning{
         level: String
     }
 
-
-    pub fn write_test(){
-        // DO NOT USE
-        // Generates a file for a test, 
-        let path = String::from("test_new.tsv");
-        let csv_path = String::from("data/data.tsv");
-        let mut _file = File::create(&path).expect("Unable to create file");
-        let mut file = OpenOptions::new()
-            .append(true)
-            .open(&path)
-            .expect("cannot open file");
-        let rdr = csv::ReaderBuilder::new()
-            .delimiter(b'\t')
-            .has_headers(true)
-            .flexible(true)
-            .from_path(csv_path);
-            //let mut graph_list : HashMap<String, (String, u32)> = HashMap::new();
-        println!("tester");
-        for result in rdr.expect("Something failed").deserialize(){ //skips first line since that's the number of vertices
-            let record: Record = result.expect("Something failed");
-            println!("{:?} This is a location", record.user_loc); 
-            let rng = rand::thread_rng().gen_range(0..1000); // 1 in 1000 chance for each line to be included
-            if rng == 0{
-                let s: String = format!("{0}\t{1}\t{2}\n", record.user_loc, record.fr_loc, record.scaled_sci);
-                file.write_all(s.as_bytes()).expect("Unable to write file");        
-            }
-        }
-        println!("Done!");
-    }
-    
     fn clean_data_counts(county_map: HashMap<String, String>) -> HashMap<(String, String), CountryPair>{
         let read_path: &str = "data/data.tsv";
         let rdr = csv::ReaderBuilder::new()

@@ -10,49 +10,75 @@ use crate::data_reading::data_reading::{Record, CountryPair};
 mod cc;
 use crate::cc::cc::verify_connected_components;
 
-
-type Edge = (Vertex, Vertex, Distance);
 type Vertex = String;
 type Distance = usize;
+type Edge = (Vertex, Vertex, Distance);
+
 
 #[derive(Debug)]
 struct Graph {
     n: usize,
-    outedges: Vec<Edge>,
+    edges: Vec<Edge>,
     parent: Vec<usize>,
     rank: Vec<usize>,
+    vec_to_num_map: HashMap<String, usize>
 }
 
 impl Graph {
-    fn adjacency_list(&self, n:usize, vec_to_num_map: &HashMap<String, usize>) -> Vec<Vec<usize>>{
-        let mut graph_list : Vec<Vec<usize>> = vec![vec![];n];
-        for (v,w,_) in self.outedges.iter() {
-            match vec_to_num_map.get(v){
+    fn adjacency_list(&self) -> Vec<Vec<usize>>{
+        /// Returns an adjacency list representationn of the graph, of vectors with indices determined by vec_to_num_map
+        let mut graph_list : Vec<Vec<usize>> = vec![vec![];self.n];
+        for (v,w,_) in self.edges.iter() {
+            match self.vec_to_num_map.get(v){
                 Some(vv) =>{
-                    match vec_to_num_map.get(w){
+                    match self.vec_to_num_map.get(w){
                         Some (ww) => {
                             graph_list[*vv].push(*ww);
                             graph_list[*ww].push(*vv);
                         },
                         None => {
-                            println!("This is the inner match -  v {:?}, w {:?}", v, w);
-                            panic!("ahhhhhh");}
+                        }
                     }
                 },
                 None => {
-                    println!("This is the outer match -  v {:?}, w {:?}", v, w);
-                    panic!("ahhhhh");
                 }
             }
 
         };
         return graph_list;
     }
-    fn create_undirected(n:usize,outedges:Vec<Edge>) -> Graph {
+    fn new_adjacency_list(&self) -> Vec<Vec<usize>>{
+        println!("{:?}", self.vec_to_num_map);
+        let mut graph_list : Vec<Vec<usize>> = vec![vec![];self.n];
+        for (v,w,_) in self.edges.iter() {
+            match self.vec_to_num_map.get(v){
+                Some(vv) =>{
+                    match self.vec_to_num_map.get(w){
+                        Some (ww) => {
+                            graph_list[*vv].push(*ww);
+                            graph_list[*ww].push(*vv);
+                        },
+                        None => {
+                        }
+                    }
+                },
+                None => {
+                }
+            }
+
+        };
+        return graph_list;
+    }
+    fn create_undirected(path: &str) -> Graph {
+        /// Initializes the graph specifically for Kruskal MST, sorting the edge list so it decreases instead of increases, so that the minimum spanning tree actually maximiezes the connectivity rather than minimizing distance
+        let vec_tuple : (Vec<Edge>, HashMap<String, usize>, usize) = read_to_vec_aggregate(path);
+        let edges : Vec<Edge> = vec_tuple.0;
+        let n : usize = vec_tuple.2;
+        let vec_to_num_map : HashMap<String, usize> = vec_tuple.1;
         let parent: Vec<usize> = vec![];
         let rank: Vec<usize> = vec![];
-        let mut g = Graph{n,outedges,parent,rank};
-        g.outedges.sort_by(|a, b| b.2.cmp(&a.2));
+        let mut g = Graph{n,edges,parent,rank, vec_to_num_map};
+        g.edges.sort_by(|a, b| b.2.cmp(&a.2));
         for node in 0..g.n {
             g.parent.push(node);
             g.rank.push(0);
@@ -75,22 +101,20 @@ impl Graph {
             self.rank[i] += 1;
         }
     }
-    fn KruskalMST(&mut self, vec_to_num_map: HashMap<String, usize>) -> Vec<Edge> {
+    fn kruskal_mst(&mut self) -> Vec<Edge> {
         let mut result: Vec<Edge> = vec![];
         let mut num_mst_e = 0;
         let mut next_edge = 0;
+        let vec_map = self.vec_to_num_map.clone();
         while num_mst_e < self.n - 1 {
-            let (u,v,w) = &self.outedges[next_edge];
-           // println!("{:?}", u);
-           // println!("{:?}", u);
-            match vec_to_num_map.get(v){
+            let (u,v,w) = &self.edges[next_edge];
+            match vec_map.get(v){
                 None => {
                     next_edge = next_edge + 1;
                     println!("problem AT {:?}", v);
                 },
                 Some(v_numeric) => {
-                    //println!("{:?} out of {:?}", num_mst_e, self.n);
-                    let u_numeric = vec_to_num_map.get(u).unwrap();
+                    let u_numeric = vec_map.get(u).unwrap();
                     let new_w : usize = *w;
                     let new_u : String = String::from(u);
                     let new_v : String = String::from(v);
@@ -105,8 +129,6 @@ impl Graph {
                     }
                 }
             }
-            //let u_numeric = vec_to_num_map.get(u).unwrap();
-
         }
         result
     }
@@ -143,50 +165,177 @@ fn read_to_counts(path: &str) -> HashMap<(String, String), CountryPair>{
 }
 
 
-fn counts_to_vector(counts_map: HashMap<(String, String), CountryPair>) -> (Vec<Edge>, HashMap<String, usize>, HashMap<usize, String>, usize){
+fn counts_to_vector(counts_map: HashMap<(String, String), CountryPair>) -> (Vec<Edge>, HashMap<String, usize>, usize){
     let mut vec_to_num_map : HashMap<String, usize> = HashMap::new();
-    let mut num_to_vec_map : HashMap<usize, String> = HashMap::new();
     let mut graph_list : Vec<Edge> = Vec::new();
     let mut counter : usize = 0;
     for (key, val) in counts_map.iter(){
         let pair : &CountryPair = val;
-        let true_distance : usize = (*pair).distance / (*pair).count; // I know this is integer division but it shouldn't lose much precision and I feel like converting to floats and back would add a fair amount of operations
+        let true_distance : usize = (*pair).distance / (*pair).count; // Being integer division, this computation loses a little precision, but not enough (IMO) to warrant changing to float and back
         let vertex1 = &key.0;
         let vertex2 = &key.1;
-        if let None = vec_to_num_map.get(vertex1){ // my hypothesis: Zimbabwe being last always comes up as vertex 2
-          //  println!("{:?}", vertex1); // ok so basically, this loop stops right before Zimbabwe - I just have to figure out why
+        if let None = vec_to_num_map.get(vertex1){
             vec_to_num_map.insert(String::from(vertex1), counter);
-            num_to_vec_map.insert(counter, String::from(vertex1));
             counter += 1;
         }
-        else if let None = vec_to_num_map.get(vertex2){
+        if let None = vec_to_num_map.get(vertex2){ //THIS IS THE LINE I"M CHANGING
             vec_to_num_map.insert(String::from(vertex2), counter);
             counter += 1;
         }
         graph_list.push((String::from(vertex1), String::from(vertex2), true_distance));
     
     }
-    println!("vec to num length: {:?}", vec_to_num_map.keys().len());   
-    return (graph_list, vec_to_num_map, num_to_vec_map, counter);
+    return (graph_list, vec_to_num_map, counter);
 }
 
 
-fn read_to_vec_aggregate(path: &str) ->  (Vec<Edge>, HashMap<String, usize>, HashMap<usize, String>, usize){
+fn read_to_vec_aggregate(path: &str) ->  (Vec<Edge>, HashMap<String, usize>, usize){
     let counts_map : HashMap<(String, String), CountryPair> = read_to_counts(path);
-    let tup :  (Vec<Edge>, HashMap<String, usize>, HashMap<usize, String>, usize) = counts_to_vector(counts_map);
-    println!("{:?}", tup.3);
+    let tup :  (Vec<Edge>, HashMap<String, usize>, usize) = counts_to_vector(counts_map);
     return tup;
+}
+
+
+fn write_line(file: &mut File, s: String){
+    file.write_all(s.as_bytes()).expect("Unable to write file"); 
+    
+}
+
+
+fn write_test_clique(){
+    let write_path: &str = "tests/test_clique.tsv";
+    let _file = File::create(&write_path).expect("Unable to create file");
+    let mut file = OpenOptions::new()
+    .append(true)
+    .open(&write_path)
+    .expect("cannot open file");
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n", String::from("user_loc"), String::from("fr_loc"),String::from("scaled_sci")));
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n","1", "2",3));
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n","2", "4",3));
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n","4", "3",3));
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n","3", "1",3));
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n","2", "3",1));    
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n","4", "1",1));
+}
+
+fn write_test_oneside(){
+    let write_path: &str = "tests/test_oneside.tsv";
+    let _file = File::create(&write_path).expect("Unable to create file");
+    let mut file = OpenOptions::new()
+    .append(true)
+    .open(&write_path)
+    .expect("cannot open file");
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n", String::from("user_loc"), String::from("fr_loc"),String::from("scaled_sci")));
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n","1", "2",2));
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n","2", "3",1));
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n","3", "4",2));
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n","4", "5",2));
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n","5", "1",2));    
+}
+
+fn write_test_niner(){
+    let write_path: &str = "tests/test_niner.tsv";
+    let _file = File::create(&write_path).expect("Unable to create file");
+    let mut file = OpenOptions::new()
+    .append(true)
+    .open(&write_path)
+    .expect("cannot open file");
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n", String::from("user_loc"), String::from("fr_loc"),String::from("scaled_sci")));
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n","1", "2",2));
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n","1", "4",1));
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n","1", "5",10));
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n","2", "3",5));
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n","2", "5",1));
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n","3", "5",10));
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n","3", "6",5));
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n","4", "5",5));
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n","4", "7",1));
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n","5", "6",2));
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n","5", "7",10));
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n","5", "9",1));
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n","6", "9",5));
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n","7", "8",1));
+}
+
+
+fn write_test_components(){
+    let write_path: &str = "tests/test_components.tsv";
+    let _file = File::create(&write_path).expect("Unable to create file");
+    let mut file = OpenOptions::new()
+    .append(true)
+    .open(&write_path)
+    .expect("cannot open file");
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n", String::from("user_loc"), String::from("fr_loc"),String::from("scaled_sci")));
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n","1", "2",1));
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n","1", "3",1));
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n","4", "5",1));
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n","5", "6",1));
+    write_line(&mut file, format!("{0}\t{1}\t{2}\n","7", "8",1));
+}
+
+fn run_test(test_path: &str) -> (usize, usize){
+    let mut g : Graph = Graph::create_undirected(test_path);
+    let adjacency_list : Vec<Vec<usize>> = g.adjacency_list();
+    let components_count : usize = verify_connected_components(g.n, adjacency_list);
+    let mut post_counter : usize = 0;
+    let mst : Vec<Edge> = g.kruskal_mst();
+     for i in &mst{
+         post_counter += i.2;
+     }
+     return (components_count, post_counter);
+}
+
+#[test]
+fn test_components(){
+    let mut g : Graph = Graph::create_undirected("tests/test_components.tsv");
+    let adjacency_list : Vec<Vec<usize>> = g.adjacency_list();
+    println!("{:?}", adjacency_list);
+    let components_count : usize = verify_connected_components(g.n, adjacency_list);
+    assert_eq!(components_count, 3)
+}
+
+#[test]
+fn test_clique(){
+    let test_result : (usize, usize) = run_test("tests/test_clique.tsv");
+    assert_eq!(test_result, (1, 9));
+}
+
+#[test]
+fn test_oneside(){
+    let test_result : (usize, usize) = run_test("tests/test_oneside.tsv");
+    assert_eq!(test_result, (1, 8));
+}
+
+#[test]
+fn test_niner(){
+    let test_result : (usize, usize) = run_test("tests/test_niner.tsv");
+    assert_eq!(test_result, (1, 51));}
+
+
+
+fn write_all_tests() {
+    write_test_clique();
+    write_test_oneside();
+    write_test_niner();
+    write_test_components();
 }
 
 
 
 fn main() {
+    write_all_tests();
     let start = Instant::now();
-    let vec_tuple : (Vec<Edge>, HashMap<String, usize>, HashMap<usize, String>, usize) = read_to_vec_aggregate("data/cleaned.tsv");
     println!("Creating undirected");
-    let mut g : Graph = Graph::create_undirected(vec_tuple.3, vec_tuple.0);
-    let adjacency_list : Vec<Vec<usize>> = g.adjacency_list(vec_tuple.3, &vec_tuple.1);
-    verify_connected_components(vec_tuple.3, adjacency_list);
+    let cleaned_path : &str = "data/cleaned.tsv";
+    let mut g : Graph = Graph::create_undirected(cleaned_path);
+    let adjacency_list : Vec<Vec<usize>> = g.adjacency_list();
+    let components_num: usize = verify_connected_components(g.n, adjacency_list);
+    println!("There are {:?} components", components_num);
+    let mut pre_counter : usize = 0;
+    for i in &g.edges{
+        pre_counter += i.2;
+    }
+    let mut post_counter : usize = 0;
     println!("MST going");
     let path = String::from("output_MST.tsv");
     let _file = File::create(&path).expect("Unable to create file");
@@ -194,11 +343,13 @@ fn main() {
          .append(true)
          .open(&path)
          .expect("cannot open file");
-    let mst : Vec<Edge> = g.KruskalMST(vec_tuple.1);
+    let mst : Vec<Edge> = g.kruskal_mst();
      for i in &mst{
          let s: String = format!("{0}\t{1}\t{2}\n", i.0, i.1, i.2);
+         post_counter += i.2;
          file.write_all(s.as_bytes()).expect("Unable to write file");        
      }
+    println!("Before MST: Total connectedness = {:?} on {:?} edges\nAfter MST: Total connectedness = {:?} on {:?} edges\n{:.2}% of connectedness maintained despite only keeping {:.3}% of connections", pre_counter, g.edges.len(), post_counter, mst.len(), post_counter as f64/pre_counter as f64 * 100.0, 100.0 * mst.len() as f64/ g.edges.len() as f64);
     let duration = start.elapsed();
     println!("Time elapsed is: {:?}", duration);
 }

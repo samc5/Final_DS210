@@ -14,7 +14,7 @@ pub mod cc {
         }
     }
     
-    pub fn verify_connected_components(n: usize, adjacency_list: Vec<Vec<usize>>) {
+    pub fn verify_connected_components(n: usize, adjacency_list: Vec<Vec<usize>>) -> usize{
         let mut component: Vec<Option<Component>> = vec![None;n];
         let mut component_count = 0;
         for v in 0..n {
@@ -23,6 +23,8 @@ pub mod cc {
                 mark_component_bfs(v, &adjacency_list, &mut component, component_count);
             }
         };
-        println!("There are {:?} connected components", component_count);
+        //println!("There are {:?} connected components", component_count);
+        return component_count;
+
     }
 }
