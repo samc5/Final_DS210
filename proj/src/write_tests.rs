@@ -1,9 +1,10 @@
+#[cfg(test)]
 pub mod write_tests{
     use std::fs::File;
     use std::io::prelude::*;
-    use std::time::{Instant};
-    use std::collections::HashMap;
     use std::fs::OpenOptions;
+
+    /// Simplifies formatting and writing a line for a test file into one line
     fn write_line(file: &mut File, s: String){
         file.write_all(s.as_bytes()).expect("Unable to write file"); 
         
@@ -173,7 +174,7 @@ pub mod write_tests{
         write_line(&mut file, format!("{0}\t{1}\t{2}\n","17", "18",1));
     }
 
-
+    /// Writes all test files as tsv files under tests directory
     pub fn write_all_tests() {
         write_test_clique();
         write_test_oneside();

@@ -4,35 +4,33 @@ use std::time::{Instant};
 use std::collections::HashMap;
 use std::fs::OpenOptions;
 mod data_cleaning;
-//use crate::data_cleaning::data_cleaning::counties_map;
+use crate::data_cleaning::data_cleaning::run_cleaner;
 mod data_reading;
 use crate::data_reading::data_reading::{Record, CountryPair};
 mod cc;
 use crate::cc::cc::verify_connected_components;
-mod write_tests;
-use crate::write_tests::write_tests::write_all_tests;
 type Vertex = String;
 type Distance = usize;
 type Edge = (Vertex, Vertex, Distance);
 
-
+/// Holds graph information necessary for minimum spanning trees
 #[derive(Debug)]
 struct Graph {
     n: usize,
     edges: Vec<Edge>,
     parent: Vec<usize>,
     rank: Vec<usize>,
-    vec_to_num_map: HashMap<String, usize>
+    vertex_to_num_map: HashMap<String, usize>
 }
 
+/// Returns an adjacency list representationn of the graph, of vectors with indices determined by vertex_to_num_map
 impl Graph {
     fn adjacency_list(&self) -> Vec<Vec<usize>>{
-        /// Returns an adjacency list representationn of the graph, of vectors with indices determined by vec_to_num_map
         let mut graph_list : Vec<Vec<usize>> = vec![vec![];self.n];
         for (v,w,_) in self.edges.iter() {
-            match self.vec_to_num_map.get(v){
+            match self.vertex_to_num_map.get(v){
                 Some(vv) =>{
-                    match self.vec_to_num_map.get(w){
+                    match self.vertex_to_num_map.get(w){
                         Some (ww) => {
                             graph_list[*vv].push(*ww);
                             graph_list[*ww].push(*vv);
@@ -48,15 +46,15 @@ impl Graph {
         };
         return graph_list;
     }
+    /// Initializes the graph specifically for Kruskal MST, sorting the edge list so it decreases instead of increases, so that the minimum spanning tree actually maximizes the connectivity rather than minimizing distance
     fn create_undirected(path: &str) -> Graph {
-        /// Initializes the graph specifically for Kruskal MST, sorting the edge list so it decreases instead of increases, so that the minimum spanning tree actually maximiezes the connectivity rather than minimizing distance
         let vec_tuple : (Vec<Edge>, HashMap<String, usize>, usize) = read_to_vec_aggregate(path);
         let edges : Vec<Edge> = vec_tuple.0;
         let n : usize = vec_tuple.2;
-        let vec_to_num_map : HashMap<String, usize> = vec_tuple.1;
+        let vertex_to_num_map : HashMap<String, usize> = vec_tuple.1;
         let parent: Vec<usize> = vec![];
         let rank: Vec<usize> = vec![];
-        let mut g = Graph{n,edges,parent,rank, vec_to_num_map};
+        let mut g = Graph{n,edges,parent,rank, vertex_to_num_map};
         g.edges.sort_by(|a, b| b.2.cmp(&a.2));
         for node in 0..g.n {
             g.parent.push(node);
@@ -80,11 +78,18 @@ impl Graph {
             self.rank[i] += 1;
         }
     }
+    /// The minimum spanning tree algorithm: Constructs the minimum number of edges (number of vertices - 1), while maximizing the amount of connectedness. It goes down the list of (already sorted) edges, and connects two nodes if they are not already connected
     fn kruskal_mst(&mut self) -> Vec<Edge> {
+        let adjacency_list : Vec<Vec<usize>> = self.adjacency_list();
+        let components_num: usize = verify_connected_components(self.n, adjacency_list);
+        if components_num != 1{
+            panic!("There is not exactly 1 component in this graph, so minimum spanning trees is impossible!");
+        }
+        println!("There is exactly 1 component, so we proceed with MST");
         let mut result: Vec<Edge> = vec![];
         let mut num_mst_e = 0;
         let mut next_edge = 0;
-        let vec_map = self.vec_to_num_map.clone();
+        let vec_map = self.vertex_to_num_map.clone();
         while num_mst_e < self.n - 1 {
             let (u,v,w) = &self.edges[next_edge];
             match vec_map.get(v){
@@ -112,7 +117,7 @@ impl Graph {
         result
     }
 }
-
+/// Reads in a given dataset, similarly to clean_data_counts in data_cleaning module, storing the connectivity between two vertices in a hashmaoo
 fn read_to_counts(path: &str) -> HashMap<(String, String), CountryPair>{
     let rdr = csv::ReaderBuilder::new()
     .delimiter(b'\t')
@@ -143,38 +148,38 @@ fn read_to_counts(path: &str) -> HashMap<(String, String), CountryPair>{
     
 }
 
-
+/// Converts the hashmap generated in read_to_counts into a vector of edges where the original vertices, which are strings, map to integers. Returns the vector and the hashmap mapping the strings to integers
 fn counts_to_vector(counts_map: HashMap<(String, String), CountryPair>) -> (Vec<Edge>, HashMap<String, usize>, usize){
-    let mut vec_to_num_map : HashMap<String, usize> = HashMap::new();
+    let mut vertex_to_num_map : HashMap<String, usize> = HashMap::new();
     let mut graph_list : Vec<Edge> = Vec::new();
-    let mut counter : usize = 0;
-    for (key, val) in counts_map.iter(){
+    let mut counter : usize = 0; // counts number of edges
+    for (key, val) in counts_map.iter(){ // HashMap so this goes in a random order
         let pair : &CountryPair = val;
         let true_distance : usize = (*pair).distance / (*pair).count; // Being integer division, this computation loses a little precision, but not enough (IMO) to warrant changing to float and back
         let vertex1 = &key.0;
         let vertex2 = &key.1;
-        if let None = vec_to_num_map.get(vertex1){
-            vec_to_num_map.insert(String::from(vertex1), counter);
+        if let None = vertex_to_num_map.get(vertex1){
+            vertex_to_num_map.insert(String::from(vertex1), counter);
             counter += 1;
         }
-        if let None = vec_to_num_map.get(vertex2){ //THIS IS THE LINE I"M CHANGING
-            vec_to_num_map.insert(String::from(vertex2), counter);
+        if let None = vertex_to_num_map.get(vertex2){
+            vertex_to_num_map.insert(String::from(vertex2), counter);
             counter += 1;
         }
         graph_list.push((String::from(vertex1), String::from(vertex2), true_distance));
     
     }
-    return (graph_list, vec_to_num_map, counter);
+    return (graph_list, vertex_to_num_map, counter);
 }
 
-
+/// Given a dataset path, returns the result of counts_to_vector for that dataset by calling read_to_counts first
 fn read_to_vec_aggregate(path: &str) ->  (Vec<Edge>, HashMap<String, usize>, usize){
     let counts_map : HashMap<(String, String), CountryPair> = read_to_counts(path);
     let tup :  (Vec<Edge>, HashMap<String, usize>, usize) = counts_to_vector(counts_map);
     return tup;
 }
 
-
+/// Given a dataset path, returns a tuple with the number connected components and total connectivity sum generated by the minimum spanning tree
 fn run_test(test_path: &str) -> (usize, usize){
     let mut g : Graph = Graph::create_undirected(test_path);
     let adjacency_list : Vec<Vec<usize>> = g.adjacency_list();
@@ -256,20 +261,16 @@ fn test_hanger(){
 
 
 fn main() {
-    write_all_tests();
     let start = Instant::now();
-    println!("Creating undirected");
+    println!("Creating undirected...");
     let cleaned_path : &str = "data/cleaned.tsv";
     let mut g : Graph = Graph::create_undirected(cleaned_path);
-    let adjacency_list : Vec<Vec<usize>> = g.adjacency_list();
-    let components_num: usize = verify_connected_components(g.n, adjacency_list);
-    println!("There are {:?} components", components_num);
     let mut pre_counter : usize = 0;
     for i in &g.edges{
         pre_counter += i.2;
     }
     let mut post_counter : usize = 0;
-    println!("MST going");
+    println!("MST going...");
     let path = String::from("output_MST.tsv");
     let _file = File::create(&path).expect("Unable to create file");
     let mut file = OpenOptions::new()
@@ -282,6 +283,7 @@ fn main() {
          post_counter += i.2;
          file.write_all(s.as_bytes()).expect("Unable to write file");        
      }
+    println!("\nResults\n------------------");
     println!("Before MST: Total connectedness = {:?} on {:?} edges\nAfter MST: Total connectedness = {:?} on {:?} edges\n{:.2}% of connectedness maintained despite only keeping {:.3}% of connections", pre_counter, g.edges.len(), post_counter, mst.len(), post_counter as f64/pre_counter as f64 * 100.0, 100.0 * mst.len() as f64/ g.edges.len() as f64);
     let duration = start.elapsed();
     println!("Time elapsed is: {:?}", duration);

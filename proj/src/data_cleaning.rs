@@ -6,12 +6,16 @@ pub mod data_cleaning{
     use std::fs::OpenOptions;
     use crate::data_reading::data_reading::{Record, CountryPair};
 
+
+
+    /// Struct for reading in the subregion information with counties_map()
     #[derive(Deserialize)]
     struct CountyRecord{
         key: String,
         level: String
     }
 
+    /// Reads in all of data.tsv (1.1 GBs), and combines all subregions of non-US countries into a single vertex for that country, averaging the connection of its subregions to every other subregion 
     fn clean_data_counts(county_map: HashMap<String, String>) -> HashMap<(String, String), CountryPair>{
         let read_path: &str = "data/data.tsv";
         let rdr = csv::ReaderBuilder::new()
@@ -63,7 +67,7 @@ pub mod data_cleaning{
         }
         return counts_map;
     }
-    
+    /// Calculates the average distance between each new pair of vertices generated in clean_data_counts(), and writes this to data/cleaned.tsv, which is the dataset I use for most things
     fn write_cleaned_data(counts_map: HashMap<(String, String), CountryPair>){
         let write_path: &str = "data/cleaned.tsv";
         let _file = File::create(&write_path).expect("Unable to create file");
@@ -71,11 +75,11 @@ pub mod data_cleaning{
             .append(true)
             .open(&write_path)
             .expect("cannot open file");
-        let s: String = format!("{0}\t{1}\t{2}\n", String::from("user_loc"), String::from("fr_loc"),String::from("scaled_sci"));
+        let s: String = format!("{0}\t{1}\t{2}\n", String::from("user_loc"), String::from("fr_loc"),String::from("scaled_sci")); //adding heading
         file.write_all(s.as_bytes()).expect("Unable to write file");   
         let mut print_counter: usize = 0;
-        for (key, val) in counts_map.iter(){
-            if print_counter % 100000 == 0{
+        for (key, val) in counts_map.iter(){ //since this is a hashmap, it writes to cleaned.tsv in a random order
+            if print_counter % 100000 == 0{ // printing only every once in a while to conserve energy
                 println!("{:?}", key);
             }
             print_counter += 1;
@@ -87,6 +91,7 @@ pub mod data_cleaning{
             file.write_all(s.as_bytes()).expect("Unable to write file");   
         }   
     }
+    /// Creates a hashmap mapping each vertex name to the system of subregions that it uses. For the US, it is counties. For the EU, it is NUTS3. For Canada, India, Pakistan, Sri Lanka, it is GADM2. For other countries, it is GADM1
     fn counties_map() -> HashMap<String, String>{
         let path: &str = "data/counties2.csv";
         let rdr = csv::ReaderBuilder::new()
@@ -101,6 +106,7 @@ pub mod data_cleaning{
         }
         return county_map;
     }
+    /// Does all three functions in this module in order; use this at the beginning of main if you wish to regenerate the cleaned dataset
     pub fn run_cleaner(){
         let counties_map = counties_map();
         let count : HashMap<(String, String), CountryPair> = clean_data_counts(counties_map);
