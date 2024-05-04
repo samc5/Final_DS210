@@ -14,12 +14,13 @@ My project is implementing the minimum spanning tree algorithm on this dataset, 
 
 ## Launch Instructions
 
-1. `git clone` the repository. Because of the 122 mb data file, this doesn’t fully work. Once it freezes on 90% on “Filtering Content,” `ctrl-c` to stop it. Everything except for the data file should be in place
-2. Download the 122 MB `cleaned.tsv` file directly from the github website, under `proj/data/cleaned.tsv`. 
-3. Move the downloaded file into the same place in the cloned repository
-4. `cd` into `repo_name/proj`
-5. `cargo test` to verify test cases
-6. `cargo run --release` to run the main code 
+1. git clone the repository. Because of the 122 mb data file, this may cause an error where everything except for the data is cloned. If the clone fully works, you can proceed to step 2. If not, see steps 1a, 1b, and 1c 
+    a. If the clone freezes at 90% on “Filtering Content” for several minutes, you can `ctrl-c` to stop it. Everything except for the data file should be in place
+    b. Download the 122 MB `cleaned.tsv` file directly from the github website, under `proj/data/cleaned.tsv`. 
+    c. Move the downloaded file into the same place in the cloned repository (`proj/data`)
+2. `cd` into `repo_name/proj`
+3. `cargo test` to verify test cases
+4. `cargo run --release` to run the main code 
 
 
 ## Methodology
