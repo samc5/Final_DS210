@@ -13,15 +13,17 @@ This dataset is a weighted, undirected graph measuring the social connectedness 
 My project is implementing the minimum spanning tree algorithm on this dataset, paring down the dataset to the minimum number of edges that connect each node in one component. The idea behind this was that the algorithm would identify the most meaningful connections between various countries and US counties. 
 
 ## Launch Instructions
+1. git clone the repository. Because of the 122 mb data file, this may cause an error where everything except for the data is cloned. If the clone fully works, you can proceed to step 2. If not, see steps 1a, 1b, and 1c  
 
-1. git clone the repository. Because of the 122 mb data file, this may cause an error where everything except for the data is cloned. If the clone fully works, you can proceed to step 2. If not, see steps 1a, 1b, and 1c 
-    a. If the clone freezes at 90% on “Filtering Content” for several minutes, you can `ctrl-c` to stop it. Everything except for the data file should be in place
-    b. Download the 122 MB `cleaned.tsv` file directly from the github website, under `proj/data/cleaned.tsv`. 
-    c. Move the downloaded file into the same place in the cloned repository (`proj/data`)
-2. `cd` into `repo_name/proj`
-3. `cargo test` to verify test cases
-4. `cargo run --release` to run the main code 
+	a. If the clone freezes at 90% on “Filtering Content” for several minutes, you can `ctrl-c` to stop it. Everything except for the data file should be in place
+	
+	b. Download the 122 MB `cleaned.tsv` file directly from the github website, under `proj/data/cleaned.tsv`.  
 
+	c. Move the downloaded file into the same place in the cloned repository (`proj/data`)
+
+3.  `cd` into `repo_name/proj`
+4.  `cargo test` to verify test cases
+5.  `cargo run --release` to run the main code
 
 ## Methodology
 The dataset comes in at over a gigabyte, so my first step was to reduce it in size. I decided to do this by folding all subregions of countries other than the US into a singular country-wide vertex. The code in `data_cleaning.rs` does this, and if you wish to do this yourself starting with the original 1.1 GB dataset (which should be renamed `data.tsv` and placed within `proj/data/`), you can call data_cleaning::run_cleaner() at the start of the main function. Because the dataset is so big, this takes ~15 minutes, so I have elected to upload the already reduced (127 MB) dataset using Git LFS. Thus my code as it stands does not directly run the data_cleaning functions. These create cleaned.tsv, which has approximately 3400 vertices, down from 8000+.
